@@ -1,4 +1,4 @@
-/**
+/*
 The MIT License (MIT)
 
 Copyright (c) 2016 ErikL
@@ -36,8 +36,8 @@ import (
 	"time"
 )
 
-var instanceId string
-var discoveryServerUrl = "http://192.168.99.100:8761"
+var instanceId = "${ipAddress}:${appName}:${uuid}"
+var discoveryServerUrl = "http://127.0.0.1:8761"
 
 var regTpl = `{
   "instance": {
@@ -52,7 +52,7 @@ var regTpl = `{
     },
     "securePort": {
       "$":${securePort},
-      "@enabled": true
+      "@enabled": false
     },
     "homePageUrl" : "http://${ipAddress}:${port}/",
     "statusPageUrl": "http://${ipAddress}:${port}/info",
@@ -62,7 +62,7 @@ var regTpl = `{
       "name": "MyOwn"
     },
     "metadata": {
-      "instanceId" : "${appName}:${instanceId}"
+      "instanceId" : "${instanceId}"
     }
   }
 }`
@@ -79,7 +79,11 @@ func RegisterAt(eurekaUrl string, appName string, port string, securePort string
   Register the application at the default eurekaUrl.
 */
 func Register(appName string, port string, securePort string) {
-	instanceId = getUUID()
+	uuid := getUUID()
+
+	instanceId = strings.Replace(instanceId, "${ipAddress}", getLocalIP(), -1)
+	instanceId = strings.Replace(instanceId, "${appName}", appName, -1)
+	instanceId = strings.Replace(instanceId, "${uuid}", uuid, -1)
 
 	tpl := string(regTpl)
 	tpl = strings.Replace(tpl, "${ipAddress}", getLocalIP(), -1)
@@ -174,7 +178,7 @@ func startHeartbeat(appName string) {
 
 func heartbeat(appName string) {
 	heartbeatAction := HttpAction{
-		Url:         discoveryServerUrl + "/eureka/apps/" + appName + "/" + getLocalIP(),
+		Url:         discoveryServerUrl + "/eureka/apps/" + appName + "/" + instanceId,
 		Method:      "PUT",
 		ContentType: "application/json;charset=UTF-8",
 	}
@@ -186,7 +190,7 @@ func deregister(appName string) {
 	fmt.Println("Trying to deregister application " + appName + "...")
 	// Deregister
 	deregisterAction := HttpAction{
-		Url:         discoveryServerUrl + "/eureka/apps/" + appName + "/" + getLocalIP(),
+		Url:         discoveryServerUrl + "/eureka/apps/" + appName + "/" + instanceId,
 		ContentType: "application/json;charset=UTF-8",
 		Method:      "DELETE",
 	}
