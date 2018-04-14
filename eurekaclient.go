@@ -105,7 +105,7 @@ func Register(appName string, port string, securePort string) {
 		if result {
 			fmt.Println("Registration OK")
 			handleSigterm(appName)
-			go startHeartbeat(appName)
+			go startHeartbeat(appName, port, securePort)
 			break
 		} else {
 			fmt.Println("Registration attempt of " + appName + " failed...")
@@ -169,21 +169,24 @@ func GetServices() ([]EurekaApplication, error) {
 }
 
 // Start as goroutine, will loop indefinitely until application exits.
-func startHeartbeat(appName string) {
+func startHeartbeat(appName string, port string, securePort string) {
 	for {
 		time.Sleep(time.Second * 30)
-		heartbeat(appName)
+		if(!heartbeat(appName)){
+			break
+		}
 	}
+	Register(appName, port, securePort)
 }
 
-func heartbeat(appName string) {
+func heartbeat(appName string) bool{
 	heartbeatAction := HttpAction{
 		Url:         discoveryServerUrl + "/eureka/apps/" + appName + "/" + instanceId,
 		Method:      "PUT",
 		ContentType: "application/json;charset=UTF-8",
 	}
 	fmt.Println("Issuing heartbeat to " + heartbeatAction.Url)
-	doHttpRequest(heartbeatAction)
+	return doHttpRequest(heartbeatAction)
 }
 
 func deregister(appName string) {
