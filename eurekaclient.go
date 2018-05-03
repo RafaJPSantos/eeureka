@@ -36,6 +36,8 @@ import (
 	"time"
 )
 
+//test comment
+
 var instanceId = "${ipAddress}:${appName}:${uuid}"
 var discoveryServerUrl = "http://127.0.0.1:8761"
 
